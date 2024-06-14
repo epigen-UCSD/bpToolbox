@@ -597,3 +597,37 @@ comp_umap <- function(sobj, comparison, cond_col, anno_col, reduction = "umap"){
 
 
 
+update_frag_paths <- function(sobj, new_frags){
+
+    opaths <- c()
+    for (i in seq(1, length(Fragments(sobj)))){
+        opath <- Fragments(sobj)[[i]]@path
+        opaths <- append(opaths, opath)
+    }
+
+    ### Create new frags objects with replaced paths 
+    nfiles <- list.files(new_frags)
+    frags <- c()
+    for (i in seq(1, length(opaths))){
+        
+        opath <- opaths[i]
+        print(paste0("Old path: ", opath))
+
+        nfile <- grep(pattern = paste0(basename(opath), "$"), x = nfiles, value = TRUE)
+        npath <- paste0(new_frags, nfile)
+        print(paste0("New path: ", npath))
+
+        frag_obj <- UpdatePath(Fragments(sobj)[[i]], new.path = npath)
+        frags <- append(frags, frag_obj)
+        
+    }
+
+    Fragments(sobj) <- frags
+    return(sobj)
+
+
+    
+}
+
+
+### Add new functions here
