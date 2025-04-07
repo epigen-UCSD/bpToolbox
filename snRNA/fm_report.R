@@ -12,12 +12,12 @@ run_fm <- function(sobj, future = FALSE, n.workers = 1, prep.sct = FALSE,
     test = "wilcox", idents = "seurat_clusters", logfc.threshold = 0.25){
 
     if (future == TRUE){
-	plan(multicore, workers = n.workers)
-	options(future.globals.maxSize = 2000 * 1024^2)
+		plan(multicore, workers = n.workers)
+		options(future.globals.maxSize = 2000 * 1024^2)
     }
 
     if (prep.sct == TRUE){
-	sobj <- PrepSCTFindMarkers(sobj, assay = "SCT", verbose = FALSE)
+		sobj <- PrepSCTFindMarkers(sobj, assay = "SCT", verbose = FALSE)
     }
 
     Idents(sobj) <- idents

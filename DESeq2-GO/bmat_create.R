@@ -62,34 +62,43 @@ bulk_matrix <- function(sobj = NULL, assay = "RNA", dset.col = "experiment", con
         # Subset the object for target cluster
         sobj.c <- subset(sobj, idents = c(ct))
 
-        # Extract datasets
-        dsets <- unique(sobj.c[[dset.col]])
+		if (length(WhichCells(sobj.c)) > 100){
+	
 
-        # Initialize bulk dataframe & set ident to dataset column
-        dset.frame <- data.frame(row.names = row.names(sobj.c[[assay]]$counts))
-        Idents(sobj.c) <- dset.col
+			# Extract datasets
+			dsets <- unique(sobj.c[[dset.col]])
 
-        # Iterate over datasets in object. Sum rows of raw un-normalize matrix
-        # Add result as column to bulk dataframe
-        for (d in dsets[,1]){
-            sobj.t <- subset(sobj.c, idents = d)
-            
-            if (!is.null(ncol(sobj.t[[assay]]$counts))){
-                rsums <- rowSums(sobj.t[[assay]]$counts)
-                dset.frame[d] <- rsums
-            }
-        }
+			# Initialize bulk dataframe & set ident to dataset column
+			dset.frame <- data.frame(row.names = row.names(sobj.c[[assay]]$counts))
+			Idents(sobj.c) <- dset.col
 
-        # Save bulk dataframe
-    	ct <- str_replace_all(ct, "_", ".")
-    	ct <- str_replace_all(ct, "/", ".")
-    	ct <- str_replace_all(ct, " ", "")
+			# Iterate over datasets in object. Sum rows of raw un-normalize matrix
+			# Add result as column to bulk dataframe
+			for (d in dsets[,1]){
+				sobj.t <- subset(sobj.c, idents = d)
 
-        print(paste0("Dimensions of bulk matrix: ", dim(dset.frame)))
-        print(paste0("writing cluster ", ct,".csv"))
-        write.csv(x = dset.frame, file = paste0(outdir, project, "_", ct, "_bulk_matrix.csv"))
+				# Catches odd case where donors with 1 cell can't have info retrieved 
+				if (length(colnames(sobj.t)) > 1){
+					rsums <- rowSums(sobj.t[[assay]]$counts)
+					dset.frame[d] <- rsums
+				}
+			}
 
-    }
+			# Save bulk dataframe
+			ct <- str_replace_all(ct, "_", ".")
+			ct <- str_replace_all(ct, "/", ".")
+			ct <- str_replace_all(ct, " ", "")
+
+			print(paste0("Dimensions of bulk matrix: ", dim(dset.frame)))
+			print(paste0("writing cluster ", ct,".csv"))
+			write.csv(x = dset.frame, file = paste0(outdir, project, "_", ct, "_bulk_matrix.csv"))
+
+		} else {
+			print(paste0("Less than 100 cells in ", ct))
+			print("skipping matrix creation")
+
+		}
+	}
 
 }
 

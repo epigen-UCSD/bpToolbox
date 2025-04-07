@@ -195,7 +195,7 @@ pseudoBulk_DE <- function(matrices.path, padj_threshold, log2FC_threshold,
 
     # Format numerical values... do this in argparse  ****
     padj_threshold <- as.double(padj_threshold)
-    log2FC_threshold <- as.double(log2FC_threshold)
+    log2fc_threshold <- as.double(log2FC_threshold)
 
     ### Create output outdirs
     dir.create(output_dir, showWarnings = FALSE)
@@ -206,6 +206,9 @@ pseudoBulk_DE <- function(matrices.path, padj_threshold, log2FC_threshold,
     # Set up matrices and celltypes 
     metadata <- read.csv(paste(matrices.path, project_name,"_metadata.csv", sep=""), sep=',', header=TRUE,
             row.names = 1, stringsAsFactors=FALSE)
+
+	print("Donors")
+	print(row.names(metadata))
 
     mat.files <- grep(pattern = "bulk_matrix", x = list.files(matrices.path), value = TRUE)
     ct.files1 <- str_remove(string = mat.files, pattern = "_bulk_matrix.csv")
@@ -222,8 +225,14 @@ pseudoBulk_DE <- function(matrices.path, padj_threshold, log2FC_threshold,
       	blk.matrix <- read.csv(paste(matrices.path, project_name, "_", c, "_bulk_matrix.csv", sep=""), sep=',',
             header=TRUE, row.names=1, stringsAsFactors=FALSE)
 
-      	        ### subset metadata for donors in celltype blk matrix
+		print("dim bulk matrix")
+		print(dim(blk.matrix))
+
+      	### subset metadata for donors in celltype blk matrix
         sub.meta <- subset(metadata, row.names(metadata) %in% colnames(blk.matrix))
+
+		print("dimensions condition metadata")
+		print(dim(sub.meta))
 
 	    ### No longer has pairwise comparison option
 	    ### Manual comparisons in our table + formulas now mandatory 
@@ -234,22 +243,23 @@ pseudoBulk_DE <- function(matrices.path, padj_threshold, log2FC_threshold,
 
       	### Begin iterating through comparisons to extract results for each group
         for (i in 1:num_pairs){
-       	    cpair <- pair_list[,i]
-	        cond1 <- cpair[1]
-	        cond2 <- cpair[2]
+       	    condpair <- pair_list[,i]
+	        cond1 <- condpair[1]
+	        cond2 <- condpair[2]
 
             # subset metadata for desired conditions. ### Still need to check whether enough donors for comparison
             sub.meta.comp <- sub.meta[which(sub.meta$condition==cond1 | sub.meta$condition==cond2), ]
 	        blk.mat.comp <- subset(blk.matrix, select = row.names(sub.meta.comp))
             # If only one condition is represented by donors existing in a celltype. Skp DESeq
-
+			print("dim subset blk matrix")
+			print(dim(blk.mat.comp))
             ###### Here is where features we test will be filtered by a specified N.
             ### These filtered matrices will be saved for convinience
             # if filter.features == TRUE do this. if not. pass blk.mat.comp to blk.mat.comp.filt
             print(paste0("identify valid features: ", cond1, "v", cond2))
             nfeatures <- as.integer(nfeatures)
             # use average feature filter. for normal filter use n. for avg use avg.thresh param
-            pass.features <- filt.features.avg(blk.matrix = blk.mat.comp, meta = sub.meta.comp, avg.thresh = nfeatures, comp_pair = cpair)
+            pass.features <- filt.features.avg(blk.matrix = blk.mat.comp, meta = sub.meta.comp, avg.thresh = nfeatures, comp_pair = condpair)
 
             blk.mat.comp.filt <- blk.mat.comp[pass.features,]
             print(paste0("nrow filt matrix:", nrow(blk.mat.comp.filt)))
@@ -282,61 +292,64 @@ pseudoBulk_DE <- function(matrices.path, padj_threshold, log2FC_threshold,
 		        tryCatch({deseq_results <- DESeqDataSetFromMatrix(countData = blk.mat.comp.filt, 
 			            colData = sub.meta.comp, design = as.formula(formula)) }
 		                , error = function(e) {an.error.occured <<- TRUE})
-		    # if error run default
-		    if (an.error.occured == TRUE){
-                # Change form used back to default since input didn't work 
-                print("error occured, use defualt form")	
-                form_used <- "~ condition"
-                deseq_results <- DESeqDataSetFromMatrix(countData = blk.mat.comp.filt, 
+		    	# if error run default
+		    	if (an.error.occured == TRUE){
+               	 # Change form used back to default since input didn't work 
+               		print("error occured, use defualt form")	
+                	form_used <- "~ condition"
+                	deseq_results <- DESeqDataSetFromMatrix(countData = blk.mat.comp.filt, 
                         colData = sub.meta.comp, design = ~ condition)
-		    }
-            deseq_results <- DESeq(deseq_results)
+		    	}
+            	deseq_results <- DESeq(deseq_results)
 
-            # Write normalized counts to file
-            nmat_file <- paste0(output_dir, "Normalized_Matrices/","Normalized_", c, "_" , condPair, ".csv")
-            write.csv(counts(deseq_results, normalized=TRUE), file=nmat_file, quote=FALSE) 
+				print("DESeq sucessful. Writing data")
+				# Write normalized counts to file
+				nmat_file <- paste0(output_dir, "Normalized_Matrices/","Normalized_", c, "_" , condPair, ".csv")
+				write.csv(counts(deseq_results, normalized=TRUE), file=nmat_file, quote=FALSE) 
 
-            ############ Declare comparison so direction of results are known ##############
-            final <- results(deseq_results, contrast = c("condition", cond1, cond2))
-            # keep only if both padj and log2FC is NOT NA
-            final <- final[is.na(final$log2FoldChange) == FALSE, ]
-            final <- final[is.na(final$padj) == FALSE, ]
+            	############ Declare comparison so direction of results are known ##############
+				final <- results(deseq_results, contrast = c("condition", cond1, cond2))
+				# keep only if both padj and log2FC is NOT NA
+				final <- final[is.na(final$log2FoldChange) == FALSE, ]
+				final <- final[is.na(final$padj) == FALSE, ]
+				print("dimensions final res")
+				print(dim(final))
 
-            # write deseq matrix to file
-            deseq_matrix <- paste(output_dir, "DESeq_out/", "DESeq2_", c, "_" , condPair, ".csv", sep="")
-            write.csv(final, file=deseq_matrix, quote=FALSE)
+				# write deseq matrix to file
+				deseq_matrix <- paste(output_dir, "DESeq_out/", "deseq2_", c, "_" , condPair, ".csv", sep="")
+				write.csv(final, file=deseq_matrix, quote=FALSE)
 
-            ### Create DE Summary
-            summarylist <- c()
-            # set adjusted pval cutoff.
-            pfinal <- final[final$padj < padj_threshold, ]
-            # use deseq results and separate by UP and DOWN-regulated for enrichr
-            dwn <- pfinal[pfinal$log2FoldChange < -log2FC_threshold, ]
-            summarylist <- c(summarylist, paste(c, "DOWN", condPair, nrow(dwn), form_used, sep = "\t"))
+				### create de summary
+				summarylist <- c()
+				# set adjusted pval cutoff.
+				pfinal <- final[final$padj < padj_threshold, ]
+				# use deseq results and separate by up and down-regulated for enrichr
+				dwn <- pfinal[pfinal$log2FoldChange < -log2fc_threshold, ]
+				summarylist <- c(summarylist, paste(c, "down", condPair, nrow(dwn), form_used, sep = "\t"))
 
-            up <- pfinal[pfinal$log2FoldChange > log2FC_threshold, ]
-            summarylist <- c(summarylist, paste(c, "UP", condPair, nrow(up), form_used, sep = "\t"))
+				up <- pfinal[pfinal$log2FoldChange > log2fc_threshold, ]
+				summarylist <- c(summarylist, paste(c, "up", condPair, nrow(up), form_used, sep = "\t"))
 
-            combined <- pfinal[pfinal$log2FoldChange < -log2FC_threshold | pfinal$log2FoldChange > log2FC_threshold, ]
-            summarylist <- c(summarylist, paste(c, "COMBINED", condPair, nrow(combined), form_used, sep = "\t"))
+				combined <- pfinal[pfinal$log2FoldChange < -log2fc_threshold | pfinal$log2FoldChange > log2fc_threshold, ]
+				summarylist <- c(summarylist, paste(c, "combined", condPair, nrow(combined), form_used, sep = "\t"))
 
-            if (nrow(combined) > 0){
-                write.table(combined, paste0(output_dir, "Significant_Results/","Sig_", c, "_" , condPair, ".csv", sep=""))
-            }
+            	if (nrow(combined) > 0){
+                	write.table(combined, paste0(output_dir, "Significant_Results/","sig_", c, "_" , condPair, ".csv", sep=""))
+            	}
 
-            write.table(summarylist, paste(output_dir, "DEG_countSummary.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=FALSE, append=TRUE)
+            	write.table(summarylist, paste(output_dir, "deg_countsummary.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=FALSE, append=TRUE)
             } else {
-                # Deseq won't run if these conditions aren't met
-                print("not enough replicates to run DESeq for comparison")
+                # deseq won't run if these conditions aren't met
+                print("not enough replicates to run deseq for comparison")
                 print("or less than 100 features passed filter")
-                # Write not enough donors to make comparison
+                # write not enough donors to make comparison
                 summarylist <- c()
-                summarylist <- c(summarylist, paste(c, "COMBINED", condPair, "NA", "NA", sep = "\t"))
-                write.table(summarylist, paste(output_dir, "DEG_countSummary.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=FALSE, append=TRUE)
+                summarylist <- c(summarylist, paste(c, "combined", condPair, "na", "na", sep = "\t"))
+                write.table(summarylist, paste(output_dir, "deg_countsummary.txt", sep=""), quote=, row.names=FALSE, col.names=FALSE, append=TRUE)
             }
 	  
             # end condition loop 
-            print(paste("DONE: Celltype ", c, " | Conditions ", cond1, " vs. ", cond2, sep=""))
+            print(paste("done: celltype ", c, " | conditions ", cond1, " vs. ", cond2, sep=""))
         }    
         # end celltype loop
     }
@@ -345,28 +358,29 @@ pseudoBulk_DE <- function(matrices.path, padj_threshold, log2FC_threshold,
 
 
 
-########### MAIN ###########
-## Aquire inputs
+########### main ###########
+## aquire inputs
 args <- process_args()
 
-### Record input
-print("****** DE Pipeline Inputs ******")
+### record input
+print("****** de pipeline inputs ******")
 print(paste0("matrices.path: ", args$matrix_path))
 print(paste0("adjusted.pval: ", args$padj_threshold))
-print(paste0("log2FC.thres: ", args$log2FC_threshold))
+print(paste0("log2fc.thres: ", args$log2FC_threshold))
 print(paste0("output.dir: ", args$output_path))
 print(paste0("project.name: ", args$project_name))
 print(paste0("celltype column: ", args$celltype_column))
 print(paste0("comparison file: ", args$comparisons))
 print(paste0("n features: ", args$n_features)) 
 print("comparisons: ")
-print(read.table(args$comparisons, header = T, sep = "\t"))
+print(read.table(args$comparisons, header = TRUE, sep = "\t"))
 
 
 pseudoBulk_DE(matrices.path = args$matrix_path, padj_threshold = args$padj_threshold, log2FC_threshold = args$log2FC_threshold, 
               output_dir = args$output_path, project_name = args$project_name, comps = args$comparisons, nfeatures = args$n_features)
 
-
-# Features to add:
-# Enrichr summary
-# Fix DESeq sig/no logfc count summary
+#pseudoBulk_DE
+#log2FC_threshold
+# features to add:
+# enrichr summary
+# fix deseq sig/no logfc count summary

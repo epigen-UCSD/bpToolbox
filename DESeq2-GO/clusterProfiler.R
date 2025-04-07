@@ -281,13 +281,13 @@ run_CP <- function(path, organism = organism, log2FC_threshold = .58, padj_thres
 	mat_files <- list.files(mat_path)
 
 	for (f in res_files){
-	   #print(f)
-	   fpre <- str_remove(string = f, pattern = (".csv")) 
-	   fpre <- str_remove(string = fpre, pattern = ("DESeq2_")) 
-	   #print(fpre)
+ 		print(f)
+	    fpre <- str_remove(string = f, pattern = (".csv")) 
+	    fpre <- str_remove(string = fpre, pattern = ("deseq2_")) 
+ 		print(fpre)
 
-	   fmat <- grep(pattern = paste0("^", fpre), x = mat_files, value = TRUE)
-	   #print(fmat)
+	    fmat <- grep(pattern = paste0("^", fpre), x = mat_files, value = TRUE, fixed = FALSE)
+ 	    print(fmat)
 	   # read f and fmat into dataframes 
 		
 	   ### Reading files

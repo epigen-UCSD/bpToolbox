@@ -449,12 +449,12 @@ args <- process_args()
 
 if (args$assay == "RNA"){
 
-	source("/tscc/nfs/home/rlancione/scToolbox/DESeq2-GO/clusterProfiler.R")
+	source("/tscc/projects/ps-epigen/bpToolbox/DESeq2-GO/clusterProfiler.R")
 	run_CP(path = args$results_path, organism = args$organism, log2FC_threshold = args$log2FC_threshold, 
     	padj_threshold = args$padj_threshold, run_cp = args$run_ClusterProfiler)
 } else {
 	
-	source("/tscc/nfs/home/rlancione/scToolbox/DESeq2-GO/great.R")
+	source("/tscc/projects/ps-epigen/bpToolbox/DESeq2-GO/great.R")
 	iterate_rGreat(path_to_res = paste0(args$results_path, "Significant_Results/"), outdir = args$results_path)
 }
 

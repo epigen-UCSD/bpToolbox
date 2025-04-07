@@ -411,30 +411,33 @@ qt.norm.drm.scoring <- function(object, normalize = TRUE, outdir = NULL, dset_co
 }
 
 
-sct.harm.processing <- function(sobj, dims=1:20, res=.05, n.neigh = 30L, min.dist = .3, spread = 1, harmony = FALSE, CM = TRUE){
-    sobj <- SCTransform(sobj, vst.flavor = "v2",
-		conserve.memory = CM, verbose = FALSE) %>%
-            	RunPCA(verbose = FALSE)
+sct.harm.processing <- function(sobj, dims = 1:20, res = 0.05, n.neigh = 30L, min.dist = 0.3, 
+    spread = 1, SCT = TRUE, harmony = FALSE, harm.group = "org.ident", CM = TRUE){
 
-    if(harmony){
-      sobj <- RunHarmony(object = sobj,
-                reduction = "pca",
-                group.by.vars = "orig.ident",
-                assay.use = 'SCT',
-                project.dim = FALSE)
-
-      sobj <- FindNeighbors(sobj, dims = dims, verbose = FALSE, reduction = "harmony") %>%
-              FindClusters(resolution = res, verbose = FALSE) %>%
-              RunUMAP(dims = dims, n.neighbors = n.neigh, min.dist = min.dist, spread = spread, verbose = FALSE, reduction = "harmony")
-    } else {
-      sobj <- FindNeighbors(sobj, dims = dims, verbose = FALSE, reduction = "pca") %>%
-              FindClusters(resolution = res, verbose = FALSE) %>%
-              RunUMAP(dims = dims, n.neighbors = n.neigh, min.dist = min.dist, spread = spread, verbose = FALSE, reduction = "pca")
+    if (SCT){
+    sobj <- SCTransform(sobj, vst.flavor = "v2", conserve.memory = CM, 
+        verbose = FALSE)
+    } 
+    if (harmony) {
+        sobj <- RunPCA(object = sobj, verbose = FALSE) %>% 
+            RunHarmony(reduction.use = "pca", group.by.vars = harm.group, 
+            assay.use = "SCT", project.dim = FALSE)
+        sobj <- FindNeighbors(sobj, dims = dims, verbose = FALSE, 
+            reduction = "harmony") %>% FindClusters(resolution = res, 
+            verbose = FALSE) %>% RunUMAP(dims = dims, n.neighbors = n.neigh, 
+            min.dist = min.dist, spread = spread, verbose = FALSE, 
+            reduction = "harmony")
     }
-
+    else {
+        sobj <- RunPCA(object = sobj, verbose = FALSE) %>%
+            FindNeighbors(sobj, dims = dims, verbose = FALSE, 
+            reduction = "pca") %>% FindClusters(resolution = res, 
+            verbose = FALSE) %>% RunUMAP(dims = dims, n.neighbors = n.neigh, 
+            min.dist = min.dist, spread = spread, verbose = FALSE, 
+            reduction = "pca")
+    }
     return(sobj)
 }
-
 
 lsi.processing <- function(sobj, TF.method = 1, dims = 2:30, res = .05, assay = "ATAC", harmony = FALSE){
     DefaultAssay(sobj) <- assay
