@@ -2,7 +2,6 @@ suppressPackageStartupMessages(library(Seurat))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(DoubletFinder))
 suppressPackageStartupMessages(library(plyr))
-suppressPackageStartupMessages(library(Nebulosa))
 suppressPackageStartupMessages(library(patchwork))
 suppressPackageStartupMessages(library(viridis))
 suppressPackageStartupMessages(library(future))
@@ -10,6 +9,7 @@ suppressPackageStartupMessages(library(harmony))
 suppressPackageStartupMessages(library(preprocessCore))
 suppressPackageStartupMessages(library(gridExtra))
 suppressPackageStartupMessages(library(argparse))
+suppressPackageStartupMessages(library(ggplot2))
 source("~/scripts/utils.R")
 
 
@@ -47,10 +47,14 @@ H5_to_sobj <- function(h5_path, species, sample){
 
     ## Add percent mito here as well to plot pre-filter
     if(species == "mm10") {
-       sobj_raw[["percent.mt"]] <- PercentageFeatureSet(sobj_raw, pattern = "^mt-")
+        sobj_raw[["percent.mt"]] <- PercentageFeatureSet(sobj_raw, pattern = "^mt-")
     } else if(species == "hg38") {
-       sobj_raw[["percent.mt"]] <- PercentageFeatureSet(sobj_raw, pattern = "^MT-")
-    }
+        sobj_raw[["percent.mt"]] <- PercentageFeatureSet(sobj_raw, pattern = "^MT-")
+    } else {
+		print("mt not calculated due to unsupported species")
+		# calc anyways for plots
+        sobj_raw[["percent.mt"]] <- PercentageFeatureSet(sobj_raw, pattern = "^MT-")
+	}
 
     return(sobj_raw)
 }
@@ -164,7 +168,7 @@ find_nexp <- function(inp_cells, outdir, sample) {
 Doublet_Finder <- function(sobj, pN_inp, outdir, sample){
     print("DoubletFinding: Calculating pK...")
     # Long std output on paramSweep. Tried to supress. Experiment with cores. 
-    sweep.sobj <- paramSweep_v3(sobj, PCs = 1:50, sct = TRUE)
+    sweep.sobj <- paramSweep(sobj, PCs = 1:50, sct = TRUE)
     sweep.stats.sobj <- summarizeSweep(sweep.sobj, GT = FALSE)
     bcmvn.sobj <- find.pK(sweep.stats.sobj)
     #datatable(bcmvn.sobj, rownames = F)
@@ -178,8 +182,8 @@ Doublet_Finder <- function(sobj, pN_inp, outdir, sample){
     calc_nExp <- find_nexp(inp_cells = cells_aft_filt, outdir = outdir, sample = sample)
     
     ####### Run Doublet Finder ############
-    sobj_seurat_DF <- doubletFinder_v3(sobj, PCs = 1:50, pN = pN_inp , 
-                                   pK = top_pK, nExp = calc_nExp, reuse.pANN = FALSE, sct = TRUE)
+    sobj_seurat_DF <- doubletFinder(sobj, PCs = 1:50, pN = pN_inp , 
+                                   pK = top_pK, nExp = calc_nExp, reuse.pANN = NULL, sct = TRUE)
     
     # Change DF colnames with regex and this crazy syntax  
     colnames(sobj_seurat_DF@meta.data)[grep(pattern = "pANN", x = colnames(sobj_seurat_DF@meta.data))] <- "DF.scores"
@@ -270,8 +274,12 @@ save_rds <- function(sobj, outdir, sample){
 ### main ###
 args <- process_args()
 
-#print(args$H5)
-#print(args$SP)
+print("H5")
+print(args$h5_file)
+print("ID")
+print(args$library_id)
+print("SPECIES")
+print(args$species)
 
 sobj.raw <- H5_to_sobj(args$h5_file, species = args$species, sample = args$library_id)
 sobj.raw
