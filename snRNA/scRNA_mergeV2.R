@@ -99,9 +99,12 @@ merging <- function(obj_list, project){
 }
 
 harm.processing <- function (sobj, dims = 1:20, res = 0.05, n.neigh = 30L, min.dist = 0.3, 
-    spread = 1) {
+    spread = 1, harmony = TRUE) {
 
-   if (harmony) {
+	sobj <- SelectIntegrationFeatures(sobj, nfeatures = 3000)
+	VariableFeatures(sobj) <- my_integration_features
+
+    if (harmony) {
         sobj <- RunPCA(object = sobj, verbose = FALSE) %>% RunHarmony(reduction = "pca", 
             group.by.vars = "orig.ident", assay.use = "SCT", 
             project.dim = FALSE)
@@ -165,8 +168,12 @@ obj_list <- adj_doub_colnames(obj_list)
 m.sobj <- merging(obj_list = obj_list, project = args$project_name)
 
 # SCT done by donor. Just batch correct & recluster
+print(m.sobj)
+
+print("Processing")
 mp.sobj <- harm.processing(sobj = m.sobj, dims = 1:args$dimensions, res = args$resolution, harmony = TRUE)
 
+print("Doublet Normalization"
 mp.sobj <- qt.norm.drm.scoring(object = mp.sobj, normalize = TRUE)
 
 plotting(sobj = mp.sobj, outdir = args$output_path)
