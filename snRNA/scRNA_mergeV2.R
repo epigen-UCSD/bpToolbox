@@ -1,6 +1,6 @@
 suppressPackageStartupMessages(library(Seurat))
 suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(Nebulosa))
+#suppressPackageStartupMessages(library(Nebulosa))
 suppressPackageStartupMessages(library(patchwork))
 suppressPackageStartupMessages(library(viridis))
 suppressPackageStartupMessages(library(future))
@@ -15,9 +15,6 @@ source("~/scripts/utils.R")
 process_args <- function(){
     parser <- ArgumentParser(description = "Create merged seurat object and create QC report")
    
-    parser$add_argument("-ip2", "--input_path2",
-        help="optional second path to dir of seurat objects for merging")
-    
     # These args belong to my group of required flagged arguments
     required_arg_group = parser$add_argument_group('flagged required arguments', 
         'the script will fail if these args are not included')
@@ -34,9 +31,28 @@ process_args <- function(){
     required_arg_group$add_argument("-o","--output_path", required = TRUE,
         help="output path for plots and objects")
 
+	# optional args
+#    parser$add_argument("-harm","--harmcol",
+#        help="column to batch correct by",
+#		default="orig.ident")
+
+    parser$add_argument("-res","--resolution",
+        help="resolution to use for clustering",
+		default=".05")
+
+	parser$add_argument("-dim","--dimensions",
+        help="dimensions for clustering",
+		default="25")
+	
+	parser$add_argument("-ip2", "--input_path2",
+        help="optional second path to dir of seurat objects for merging",
+		default=NULL)
+    
+
     args <- parser$parse_args()
     return(args)
 }
+
 
 read_objects <- function(ipath1, ipath2 = NULL){
     objs <- list.files(ipath1)
@@ -82,14 +98,11 @@ merging <- function(obj_list, project){
     return(m.sobj)
 }
 
-sct.harm.processing.m <- function (sobj, dims = 1:20, res = 0.05, n.neigh = 30L, min.dist = 0.3, 
-    spread = 1, harmony = FALSE, CM = FALSE, sct.skip = FALSE) {
-    if (sct.skip ==FALSE){
-        sobj <- SCTransform(sobj, vst.flavor = "v2", conserve.memory = CM, 
-            verbose = FALSE) %>% RunPCA(verbose = FALSE)
-        }
-    if (harmony) {
-        sobj <- RunHarmony(object = sobj, reduction = "pca", 
+harm.processing <- function (sobj, dims = 1:20, res = 0.05, n.neigh = 30L, min.dist = 0.3, 
+    spread = 1) {
+
+   if (harmony) {
+        sobj <- RunPCA(object = sobj, verbose = FALSE) %>% RunHarmony(reduction = "pca", 
             group.by.vars = "orig.ident", assay.use = "SCT", 
             project.dim = FALSE)
         sobj <- FindNeighbors(sobj, dims = dims, verbose = FALSE, 
@@ -99,7 +112,7 @@ sct.harm.processing.m <- function (sobj, dims = 1:20, res = 0.05, n.neigh = 30L,
             reduction = "harmony")
     }
     else {
-        sobj <- FindNeighbors(sobj, dims = dims, verbose = FALSE, 
+       sobj <- RunPCA(object = sobj, verbose = FALSE) %>% FindNeighbors(dims = dims, verbose = FALSE, 
             reduction = "pca") %>% FindClusters(resolution = res, 
             verbose = FALSE) %>% RunUMAP(dims = dims, n.neighbors = n.neigh, 
             min.dist = min.dist, spread = spread, verbose = FALSE, 
@@ -151,7 +164,8 @@ obj_list <- adj_doub_colnames(obj_list)
 
 m.sobj <- merging(obj_list = obj_list, project = args$project_name)
 
-mp.sobj <- sct.harm.processing.m(sobj = m.sobj, dims = 1:25, res = 1, harmony = FALSE, CM = FALSE)
+# SCT done by donor. Just batch correct & recluster
+mp.sobj <- harm.processing(sobj = m.sobj, dims = 1:args$dimensions, res = args$resolution, harmony = TRUE)
 
 mp.sobj <- qt.norm.drm.scoring(object = mp.sobj, normalize = TRUE)
 

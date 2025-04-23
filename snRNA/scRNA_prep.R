@@ -138,7 +138,7 @@ find_nexp <- function(inp_cells, outdir, sample) {
         rec_cells <- 500
     } else {
         # Calculate percentage based on 10X multiplet rate table
-        mtable <- read.delim("/home/rlancione/misc/10x_doublet_rate.txt", sep=" ", header = T, stringsAsFactors = F)
+        mtable <- read.delim("/tscc/nfs/home/rlancione/misc/multiplet_rate.txt", sep=" ", header = T, stringsAsFactors = F)
         chos_pt <- mtable[which(mtable$recov_cells == rec_cells),c("percent")]
     }
     
