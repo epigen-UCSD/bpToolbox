@@ -8,12 +8,12 @@ suppressPackageStartupMessages(library(org.Mm.eg.db))
 ### This script will contain functions to run findmarkers and write a report on the output
 
 # Functions
-run_fm <- function(sobj, future = FALSE, n.workers = 1, prep.sct = FALSE, 
+run_fm <- function(sobj, future = TRUE, n.workers = 1, prep.sct = FALSE, 
     test = "wilcox", idents = "seurat_clusters", logfc.threshold = 0.25){
 
+	options(future.globals.maxSize = 2000 * 1024^2)
     if (future == TRUE){
-		plan(multicore, workers = n.workers)
-		options(future.globals.maxSize = 2000 * 1024^2)
+		plan("multicore", workers = 8)
     }
 
     if (prep.sct == TRUE){
@@ -21,6 +21,8 @@ run_fm <- function(sobj, future = FALSE, n.workers = 1, prep.sct = FALSE,
     }
 
     Idents(sobj) <- idents
+	print("Run FM on this object")
+	print(sobj)
     res <- FindAllMarkers(sobj, test.use = test, logfc.threshold = logfc.threshold)
 
     return(res)
@@ -28,7 +30,7 @@ run_fm <- function(sobj, future = FALSE, n.workers = 1, prep.sct = FALSE,
 
 
 # Writes spreadsheet of top DE genes
-write.top.n.xlsx <- function(markers, file, group.by = "cluster", n = 100){
+write.top.n.xlsx <- function(markers, file, group.by = "cluster", n = 300){
     wb <- createWorkbook("TopMarkers")
 
     for (c in unique(markers[[group.by]])){

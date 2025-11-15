@@ -60,23 +60,10 @@ if __name__ == '__main__':
     logging.info('Start.')
     startTime = datetime.now()
 
-
     idir="/tscc/projects/ps-epigen/users/rlan/sandbox/CallPeaks/splitfrags_out/"
-    ipath="/tscc/projects/ps-epigen/users/rlan/sandbox/CallPeaks/splitfrags_out/Cones.bed"
-    opath="/tscc/projects/ps-epigen/users/rlan/sandbox/CallPeaks/macs3_outv3/"
-    copath="/tscc/projects/ps-epigen/users/rlan/sandbox/CallPeaks/callpeak_out/"
+    odir="/tscc/projects/ps-epigen/users/rlan/sandbox/CallPeaks/macs3_outv3/"
 
-    #idir="/home/rlan/SSHFS/users/rlan/sandbox/CallPeaks/splitfrags_out/"
-    #opath="/home/rlan/SSHFS/users/rlan/sandbox/CallPeaks/macs3_outv2/"
-
-    #### Test 
-    #subprocess.run(f"macs3 hmmratac -i {ipath} -f BEDPE -n Cones --outdir {opath}", shell=True)
-
-    #run_hmmratac(ipath=ipath, opath=opath)
-    #runp_hmmratac(p=8, idir=idir, odir=opath)
-    #run_callpeak(ipath=ipath, opath=copath)
-    runp_callpeak(p=8, idir=idir, odir=copath)
-
+    runp_callpeak(p=8, idir=idir, odir=odir)
 
     logging.info((datetime.now() - startTime)) 
     logging.info('Finish.')

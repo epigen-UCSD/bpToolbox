@@ -92,13 +92,15 @@ if (args$run_fm){
 	print("Run FindMarkers")
 	if (args$assay == "RNA"){
 		DefaultAssay(sobj) <- "RNA"
-			sobj <- NormalizeData(sobj)
-			res <- suppressMessages(run_fm(sobj = sobj, test = args$test, 
-						idents = args$label, n.workers = 10))
+		print("Run FM on RNA assay")
+		sobj <- NormalizeData(sobj)
+		res <- suppressMessages(run_fm(sobj = sobj, test = args$test, 
+						idents = args$label, n.workers = args$workers))
 	} else if (args$assay == "SCT"){
 		DefaultAssay(sobj) <- "SCT"
-			res <- suppressMessages(run_fm(sobj = sobj, prep.sct = TRUE,
-						idents = args$label, test = args$test, n.workers = args$workers))
+		print("Run FM on SCT assay")
+		res <- suppressMessages(run_fm(sobj = sobj, prep.sct = TRUE,
+				idents = args$label, test = args$test, n.workers = args$workers))
 	} else {print("Not supported assay")}
 
 res.de <- fm_report(sobj = sobj, res = res, outdir = odir)
@@ -121,6 +123,7 @@ if (args$universe & args$run_cp){
 	fm_cProfiler(res.de = res.de, outdir = odir, universe = genes)
 } else if (args$run_cp){
 	print("Run ClusterProfiler")
+	res.de <- read.table(paste0(odir, "fm_res.txt")) 
 	fm_cProfiler(res.de = res.de, outdir = odir, universe = NULL)
 }
 

@@ -62,7 +62,7 @@ run_rGreat <- function(res, genome = "hg38", outdir){
 
 	if (nrow(sig.dwn) > 0){
 		peak.df.dwn <- res_to_bed(sig.dwn)
-		write.table(peak.df.dwn, paste0(outdir, "Sig_bed/", comp, "_dwn.bed"), quote = FALSE, row.names = FALSE)
+		write.table(peak.df.dwn, paste0(outdir, "Sig_bed/", comp, "_dwn.bed"), quote = FALSE, row.names = FALSE, sep = "\t")
 
 		gr.dwn <- makeGRangesFromDataFrame(peak.df.dwn)
 

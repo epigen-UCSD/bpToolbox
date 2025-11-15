@@ -8,6 +8,7 @@ suppressPackageStartupMessages(library(harmony))
 suppressPackageStartupMessages(library(preprocessCore))
 suppressPackageStartupMessages(library(gridExtra))
 suppressPackageStartupMessages(library(argparse))
+library(ggplot2)
 source("~/scripts/utils.R")
 
 
@@ -38,11 +39,11 @@ process_args <- function(){
 
     parser$add_argument("-res","--resolution",
         help="resolution to use for clustering",
-		default=".05")
+		default=.05, type = "double")
 
 	parser$add_argument("-dim","--dimensions",
         help="dimensions for clustering",
-		default="25")
+		default=25)
 	
 	parser$add_argument("-ip2", "--input_path2",
         help="optional second path to dir of seurat objects for merging",
@@ -101,13 +102,12 @@ merging <- function(obj_list, project){
 harm.processing <- function (sobj, dims = 1:20, res = 0.05, n.neigh = 30L, min.dist = 0.3, 
     spread = 1, harmony = TRUE) {
 
-	sobj <- SelectIntegrationFeatures(sobj, nfeatures = 3000)
-	VariableFeatures(sobj) <- my_integration_features
 
     if (harmony) {
-        sobj <- RunPCA(object = sobj, verbose = FALSE) %>% RunHarmony(reduction = "pca", 
-            group.by.vars = "orig.ident", assay.use = "SCT", 
-            project.dim = FALSE)
+        sobj <- RunPCA(object = sobj, verbose = FALSE) %>% 
+			RunHarmony(group.by.vars = "orig.ident", assay.use = "SCT", 
+            project.dim = FALSE, reduction.use = "pca") 
+
         sobj <- FindNeighbors(sobj, dims = dims, verbose = FALSE, 
             reduction = "harmony") %>% FindClusters(resolution = res, 
             verbose = FALSE) %>% RunUMAP(dims = dims, n.neighbors = n.neigh, 
@@ -167,13 +167,17 @@ obj_list <- adj_doub_colnames(obj_list)
 
 m.sobj <- merging(obj_list = obj_list, project = args$project_name)
 
+my_integration_features <- SelectIntegrationFeatures(obj_list, nfeatures = 3000)
+VariableFeatures(m.sobj) <- my_integration_features
+
 # SCT done by donor. Just batch correct & recluster
+print("Merged Object")
 print(m.sobj)
 
 print("Processing")
-mp.sobj <- harm.processing(sobj = m.sobj, dims = 1:args$dimensions, res = args$resolution, harmony = TRUE)
+mp.sobj <- harm.processing(sobj = m.sobj, dims = 1:25, res = args$resolution, harmony = TRUE)
 
-print("Doublet Normalization"
+print("Doublet Normalization")
 mp.sobj <- qt.norm.drm.scoring(object = mp.sobj, normalize = TRUE)
 
 plotting(sobj = mp.sobj, outdir = args$output_path)

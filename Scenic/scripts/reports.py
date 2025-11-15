@@ -1,6 +1,6 @@
 import sys
 import os
-sys.path.append(os.path.abspath("/tscc/nfs/home/rlancione/ps-epigen/users/rlan/sandbox/scenic/templates/"))
+sys.path.append(os.path.abspath("/tscc/projects/ps-epigen/bpToolbox/Scenic/scripts/"))
 from heatmap_utils import *
 
 
@@ -10,12 +10,12 @@ celltype_col = "celltypes"
 condition_col = "condition"
 outdir = "Reports_otsu"
 
+os.makedirs(f"{outdir}", exist_ok = True)
 scplus_mdata = mudata.read(f"{proj_path}/Snakemake/scplusmdata.h5mu")
 
 
 ###### Specificity Reports 
 specificity_report(scplus_mdata, celltype_col, condition_col, outdir):
-
 
 
 ###### Plotting heatmaps 
@@ -33,11 +33,6 @@ specificity_report(scplus_mdata, celltype_col, condition_col, outdir):
     # direct / extended 
     # Top N GRN
 
-
-## Heatmaps 
-os.makedirs(f"{outdir}//Heatmaps", exist_ok = True)
-
 dff = make_heatmap_df(scplus_mdata, celltype_col, direct == True, onlypos == False)
-
 
 heatmap_plotting(scplus_mdata, dff, motifAnno = "direct", celltype_col, outdir)

@@ -16,7 +16,8 @@ library(factoextra)
 
 
 create_DE_meta <- function(sobj = sobj, bulk.by = "orig.ident", col.by = "condition", 
-                           add_cov1 = NULL, add_cov2 = NULL , add_cov3 = NULL, add_cov4 = NULL, add_cov5 = NULL){
+                           add_cov1 = NULL, add_cov2 = NULL , add_cov3 = NULL, add_cov4 = NULL, add_cov5 = NULL,
+						   add_cov6 = NULL, add_cov7 = NULL){
     rows <- unique(sobj[[bulk.by]][,1])
     Idents(sobj) <- bulk.by
     condit <- c()
@@ -26,6 +27,8 @@ create_DE_meta <- function(sobj = sobj, bulk.by = "orig.ident", col.by = "condit
     cov3_labels <- c()
     cov4_labels <- c()
     cov5_labels <- c()
+    cov6_labels <- c()
+    cov7_labels <- c()
     # Iterate over datasets "rows" to extract conditions ect...
     for (d in rows){
         sobj.t <- subset(sobj, idents = d)
@@ -48,6 +51,13 @@ create_DE_meta <- function(sobj = sobj, bulk.by = "orig.ident", col.by = "condit
         if (!is.null(add_cov5)){
             cov5_labels <- append(cov5_labels, sobj.t[[add_cov5]][1,])
         }
+	    if (!is.null(add_cov6)){
+            cov6_labels <- append(cov6_labels, sobj.t[[add_cov6]][1,])
+        }
+	    if (!is.null(add_cov7)){
+            cov7_labels <- append(cov7_labels, sobj.t[[add_cov7]][1,])
+        }
+
     }
 
     meta.frame <- data.frame(row.names = rows, "condition" = condit, "cellquant" = ncell_list)
@@ -56,6 +66,8 @@ create_DE_meta <- function(sobj = sobj, bulk.by = "orig.ident", col.by = "condit
     if (!is.null(add_cov3)){meta.frame[[add_cov3]] <- cov3_labels}
     if (!is.null(add_cov4)){meta.frame[[add_cov4]] <- cov4_labels}
     if (!is.null(add_cov5)){meta.frame[[add_cov5]] <- cov5_labels}
+    if (!is.null(add_cov6)){meta.frame[[add_cov6]] <- cov6_labels}
+    if (!is.null(add_cov7)){meta.frame[[add_cov7]] <- cov7_labels}
     
     return(meta.frame)   
 }

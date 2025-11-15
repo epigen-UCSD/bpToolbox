@@ -1,5 +1,5 @@
 ### Functions to help write specificity plots and heatmaps 
-
+import sys
 import os
 from pathlib import Path
 import pandas as pd
@@ -23,47 +23,49 @@ from plotnine.facets import facet_grid
 import plotnine
 from typing import List, Union, Optional, Tuple
 
+print("done loading libraries")
 
-
-def specificity_report(scplus_mdata, celltype_col, condition_col, outdir):
+def specificity_report(scplus_mdata, celltype_col, condition_col, outdir, motifAnno = "direct"):
 
     os.makedirs(f"{outdir}//Specificity/", exist_ok = True)
-    os.mkdir(f"{outdir}//Specificity/ConditionPerCelltype")
+    os.makedirs(f"{outdir}//Specificity/ConditionPerCelltype", exist_ok = True)
 
     rss = regulon_specificity_scores(
             scplus_mudata=scplus_mdata,
             variable=f"scRNA_counts:{celltype_col}",
-            modalities=["direct_gene_based_AUC"]
+            modalities=[f"{motifAnno}_gene_based_AUC"]
             )
 
-    plot_rss(data_matrix=rss, top_n=5, num_columns=4, save=f"{outdir}/Specificity/celltype_rss_plot.pdf")o
+    plot_rss(data_matrix=rss, top_n=5, num_columns=4, save=f"{outdir}/Specificity/{motifAnno}_celltype_rss_plot.pdf") 
 
 
     rss = regulon_specificity_scores(
             scplus_mudata=scplus_mdata,
             variable=f"scRNA_counts:{condition_col}",
-            modalities=["direct_gene_based_AUC"]
+            modalities=[f"{motifAnno}_gene_based_AUC"]
             )
 
-    plot_rss(data_matrix=rss, top_n=5, num_columns=4, save="f{outdir}/Specificity/condition_rss_plot.pdf")
+    plot_rss(data_matrix=rss, top_n=5, num_columns=4, save=f"{outdir}/Specificity/{motifAnno}_condition_rss_plot.pdf")
 
-
+    celltypes = scplus_mdata.obs[f"scRNA_counts:{celltype_col}"].unique()
     for ct in celltypes:
-        ct_mdata = scplus_mdata[scplus_mdata.obs["scRNA_counts:celltype"] == ct]
+        ct_mdata = scplus_mdata[scplus_mdata.obs[f"scRNA_counts:{celltype_col}"] == ct]
 
         ct_rss = regulon_specificity_scores(
                 scplus_mudata=ct_mdata,
-                variable="scRNA_counts:condition",
-                modalities=["direct_gene_based_AUC"]
+                variable=f"scRNA_counts:{condition_col}",
+                modalities=[f"{motifAnno}_gene_based_AUC"]
                 )
 
-         plot_rss(data_matrix=ct_rss, top_n=5, num_columns=4, save=f"{outdir}//Specificity/ConditionPerCelltype/{ct}_conditon_rss_plot.pdf")
+        plot_rss(data_matrix=ct_rss, top_n=5, num_columns=4, save=f"{outdir}//Specificity/ConditionPerCelltype/{motifAnno}_{ct}_conditon_rss_plot.pdf")
+
+
 
 def my_generate_dotplot_df(
     size_matrix: pd.DataFrame,
     color_matrix: pd.DataFrame,
     group_by: List[str],
-    size_features: List[str], # size_features, color_features and feature_names the order should correspond, e.g. color_features, size_features, feature_names = scplus_mudata.uns["direct_e_regulon_metadata"][["Region_signature_name", "Gene_signature_name", "eRegulon_name"]].drop_duplicates().values.T
+    size_features: List[str], 
     color_features: List[str],
     feature_names: List[str],
     scale_size_matrix: bool = True,
@@ -219,7 +221,8 @@ def my_heatmap_df(
     scale_size_matrix: bool = True,
     scale_color_matrix: bool = True,
     group_variable_order: Optional[List[str]] = None,
-    split_repressor_activator: bool = True,
+    split_repressor_activator: bool = True):
+
     # Generate dataframe for plotting
     size_matrix = scplus_mudata[size_modality].to_df()
     color_matrix = scplus_mudata[color_modality].to_df()
@@ -250,7 +253,7 @@ def my_heatmap_df(
 
 
 
-def make_heatmap_df(scplus_mdata, celltype_col, motifAnno == "direct", onlypos == False):
+def make_heatmap_df(scplus_mdata, celltype_col, motifAnno = "direct", onlypos = False):
 
     df = my_heatmap_df(
         scplus_mudata = scplus_mdata,
@@ -342,7 +345,30 @@ def _scale(X: pd.DataFrame) -> pd.DataFrame:
     return (X - X.min()) / (X.max() - X.min())
 
 
-def heatmap_plotting(scplus_mdata, dff, motifAnno = "direct", celltype_col, outdir):
+def heatmap_plotting(scplus_mdata, dff, celltype_col, outdir, motifAnno = "direct", onlypos = False,
+                    width = 10, height = 8, subset = None, order = None, top = None, name = ''):
+
+    os.makedirs(f"{outdir}/Heatmaps", exist_ok = True)
+
+    if onlypos == True:
+        onlypos = "onlypos"
+    else:
+        onlypos = "all"
+
+
+    # Subset labels 
+    if subset != None:
+        dff = dff[dff[f"scRNA_counts:{celltype_col}"].isin(subset)]
+
+    # Order 
+    if order != None:
+        dff[f"scRNA_counts:{celltype_col}"] = dff[f"scRNA_counts:{celltype_col}"].astype('category')
+
+        # Reorder categories
+        dff[f"scRNA_counts:{celltype_col}"] = dff[f"scRNA_counts:{celltype_col}"].cat.reorder_categories(order)
+
+
+
     my_heatmap_dotplot(
             scplus_mudata = scplus_mdata,
             plotting_df = dff,
@@ -355,8 +381,8 @@ def heatmap_plotting(scplus_mdata, dff, motifAnno = "direct", celltype_col, outd
             feature_name_key = "eRegulon_name",
             sort_data_by = f"{motifAnno}_gene_based_AUC",
             orientation = "vertical",
-            figsize = (8, 6),
-            save = f"{outdir}/Heatmaps/celltype_TFe_specificity_scaled_heatmap.pdf"
+            figsize = (width, height),
+            save = f"{outdir}/Heatmaps/{name}_{motifAnno}_{onlypos}_TFe_spec_heatmap.pdf"
             )
 
 
@@ -372,7 +398,7 @@ def heatmap_plotting(scplus_mdata, dff, motifAnno = "direct", celltype_col, outd
             feature_name_key = "eRegulon_name",
             sort_data_by = f"{motifAnno}_gene_based_AUC",
             orientation = "vertical",
-            figsize = (8, 6),
-            save = f"{outdir}/Heatmaps/celltype_AUC_scaled_heatmap.pdf"
+            figsize = (width, height),
+            save = f"{outdir}/Heatmaps/{name}_{motifAnno}_{onlypos}_AUC_scaled_heatmap.pdf"
             )
 
