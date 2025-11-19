@@ -6,7 +6,8 @@ import itertools as iter
 from pathlib import Path
 from functools import partial
 from multiprocessing import Pool
-
+from datetime import datetime
+import logging
 
 ### Metadata must have sample, celltype, barcodes
 ### Since we have the celltypes samples, and fragments paired 
@@ -58,6 +59,11 @@ def split_frags(celltype, sample, fragment_file, outpath, ct_col = 'celltype', c
 
 
 def run_split_frags(combinations, p, odir, ct_col, meta):
+
+    # Init logs 
+    logging.basicConfig(format='[%(filename)s] %(asctime)s %(levelname)s: %(message)s', datefmt='%I:%M:%S', level=logging.INFO)
+    logging.info('Start.')
+    startTime = datetime.now()
 
     # wrapper func helps delclare keyword args not in combinations 
     # **************** had to change to leiden 
