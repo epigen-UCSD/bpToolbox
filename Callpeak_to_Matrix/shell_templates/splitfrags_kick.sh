@@ -19,9 +19,15 @@ cd /tscc/lustre/ddn/scratch/rlancione/
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate renv4
 
+CT_COL='[CELLTYPE_COLUMN]'
+META='[META_PATH]'
+OUT='[WDIR]'
+
+Hes a poopie 
+
 
 ### args.. in-frags, ct col, meta 
 ### still need argparse 
-python ../support/splitfrags_support.py 
+#python ../support/splitfrags_support.py 
 
 

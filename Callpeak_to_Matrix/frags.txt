@@ -1,0 +1,3 @@
+,frag_paths
+0,/tscc/projects/ps-epigen/10x_output/240813/counts_out/Multiome/QY_2579_QY_2578/outs/atac_fragments.tsv.gz
+1,/tscc/projects/ps-epigen/10x_output/240813/counts_out/Multiome/QY_2585_QY_2584/outs/atac_fragments.tsv.gz
