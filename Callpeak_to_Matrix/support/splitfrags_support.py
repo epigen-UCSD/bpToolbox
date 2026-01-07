@@ -1,7 +1,9 @@
+import os 
 import sys
 import argparse
 import numpy as np
 import pandas as pd 
+import itertools as iter
 
 sys.path.append("/tscc/projects/ps-epigen/bpToolbox/snATAC/")
 import splitfrags
@@ -21,7 +23,7 @@ def getargs():
     parser.add_argument("--cores", default = 20, help="ncores for split frags. > 20 is good for large data")
 
 
-        # 5. Parse the arguments
+    # 5. Parse the arguments
     args = parser.parse_args()
     return(args)
 
@@ -30,15 +32,21 @@ def getargs():
 args = getargs()
 
 metadata = pd.read_csv(args.metadata, index_col=0)
-frag_paths = pd.read_csv(args.paths_txt)[1]
+frags = pd.read_csv(args.paths_txt).iloc[:,1]
 
 ### add space for a split later 
-frag_paths = [f' {i}' for i in frag_paths]
+frag_paths = [f' {i}' for i in frags]
 samples = [p.split("/")[-3] for p in frag_paths]
 
 outdir = f'{args.out}sample_tmp/'
 os.makedirs(outdir, exist_ok=True)
 
+print('check inputs')
+print(f'n frags: {len(frag_paths)}')
+print(f'nrow meta: {len(metadata)}')
+print(f'groups to split: {args.groups}')
+print(f'out path: {args.out}')
+print(f'cores: {args.cores}')
 
 ## Build sample and barcode columns to query 
 ## Note: run_split_frags want's explicent "sample" and "barcode" named columns 
@@ -61,7 +69,7 @@ splitfrags.run_split_frags(combinations, args.cores, outdir, ct_col=args.groups,
 merge_out = f'{args.out}merged/' 
 os.makedirs(merge_out, exist_ok=True)
 mcombos = [[f'{c}', outdir, merge_out] for c in metadata[args.groups].unique()] 
-splitfrags.run_merge_frags(mcombos, args.cores/2)
+splitfrags.run_merge_frags(mcombos, args.cores)
 
 
 

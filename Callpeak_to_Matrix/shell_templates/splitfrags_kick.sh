@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH -J splitfrags 
-#SBATCH -N [NODES]                            #Nodes
+#SBATCH -N 1                            #Nodes
 #SBATCH -c [CORES]                           #Cores
-#SBATCH --mem=[MEM]                       #Memory
+#SBATCH --mem=[MEM]G                       #Memory
 #SBATCH -t 48:00:00
-#SBATCH -o [WDIR]/logs/splitfrags.o
-#SBATCH -e [WDIR]/logs/splitfrags.e
+#SBATCH -o [WDIR]logs/splitfrags.o
+#SBATCH -e [WDIR]logs/splitfrags.e
 #SBATCH -p platinum
 #SBATCH -q hcp-csd772
 #SBATCH -A csd772
@@ -17,17 +17,20 @@ cd /tscc/lustre/ddn/scratch/rlancione/
 
 # activate cond env
 source ~/miniconda3/etc/profile.d/conda.sh
-conda activate renv4
+conda activate renv43
 
-CT_COL='[CELLTYPE_COLUMN]'
+FRAG_PATHS='[WDIR]/frags.txt'
+CT_COL='[CTYPE_COL]'
 META='[META_PATH]'
-OUT='[WDIR]'
-
-Hes a poopie 
+OUT='[OUTDIR]'
 
 
-### args.. in-frags, ct col, meta 
-### still need argparse 
-#python ../support/splitfrags_support.py 
+### Run python splitfrags support 
+python [WDIR]support/splitfrags_support.py \
+	--paths_txt $FRAG_PATHS \
+	--groups $CT_COL \
+	--metadata $META \
+	--out $OUT 	
+
 
 
