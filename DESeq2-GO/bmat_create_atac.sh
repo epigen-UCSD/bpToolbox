@@ -41,7 +41,7 @@ CV2="exp_batch"
 
 # Path to script
 echo "run Rscript"
-Script='/tscc/nfs/home/rlancione/scToolbox/DESeq2-GO/bmat_create_atac.R'
+Script='/tscc/nfs/home/rlancione/ps-epigen/bpToolbox/DESeq2-GO/bmat_create_atac.R'
 # args 1. input object path 2. output path 3. project name  
 Rscript $Script -sobj $SOBJ -pp $PP -nc $NC -dcol $DSET_COL -ccol $COND_COL -ctcol $CT_COL --proj $PROJ -o $ODIR \
 	-cov1 $CV1 -cov2 $CV2 
