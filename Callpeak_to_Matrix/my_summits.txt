@@ -1,0 +1,8 @@
+Endothelial	/tscc/lustre/ddn/scratch/rlancione/macs3_out/Endothelial_summits.bed
+HSC	/tscc/lustre/ddn/scratch/rlancione/macs3_out/HSC_summits.bed
+Cholangiocyte	/tscc/lustre/ddn/scratch/rlancione/macs3_out/Cholangiocyte_summits.bed
+T	/tscc/lustre/ddn/scratch/rlancione/macs3_out/T_summits.bed
+Myeloid	/tscc/lustre/ddn/scratch/rlancione/macs3_out/Myeloid_summits.bed
+Hepatocytes	/tscc/lustre/ddn/scratch/rlancione/macs3_out/Hepatocytes_summits.bed
+B	/tscc/lustre/ddn/scratch/rlancione/macs3_out/B_summits.bed
+NK	/tscc/lustre/ddn/scratch/rlancione/macs3_out/NK_summits.bed
